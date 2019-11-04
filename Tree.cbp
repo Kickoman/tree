@@ -33,7 +33,6 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="ATree.h" />
-		<Unit filename="containers.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="nodes.h" />
 		<Extensions>
