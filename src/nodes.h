@@ -48,9 +48,26 @@ public:
         addChild(tmpPtr);
     }
 
+    bool denyChild(NodePtr child)
+    {
+        for (auto it = _children.begin(); it != _children.end(); it++)
+        {
+            if (*it == child)
+            {
+                child->setParent(nullptr);
+                _children.erase(it);
+                return true;
+            }
+        }
+        return false;
+    }
+
     void setParent(NodePtr parent)
     {
-        // TODO: remove parent if exist
+        if (_parent)
+        {
+            _parent->denyChild(this);
+        }
 
         _parent = parent;
     }
