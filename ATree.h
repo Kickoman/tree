@@ -3,18 +3,16 @@
 
 #include <set>
 #include <iterator>
-#include "containers.h"
 #include "nodes.h"
 
-template<class T>
+template<class T, template<class> class N> // type, Node type
 class Tree
 {
 protected:
-    BaseNode<T>* _root;
+    N<T> *_root;
 
-    BaseNode<T>* __getRoot() const;
 public:
-    Tree() : _root{nullptr}
+    Tree() :_root{nullptr}
     {}
 
     ~Tree()
@@ -22,30 +20,29 @@ public:
         delete _root;
     }
 
-    virtual void createRoot(T value) = 0;
+    void createRoot(T value)
+    {
+        if (_root)
+            delete _root;
+
+        _root = new N<T>(value);
+    }
 
     size_t size() const
     {
         return _root->subtreeSize();
     }
+
+    N<T> *getRoot() const
+    {
+        return _root;
+    }
 };
 
 template<class T>
-class OrderedTree : public Tree<T>
-{
-public:
-    void createRoot(T value) override
-    {
-        if (this->_root)
-            delete this->_root;
+using OrderedTree = Tree<T, OrderedNode>;
 
-        this->_root = new OrderedNode<T>(value);
-    }
-
-    OrderedNode<T>* getRoot() const
-    {
-        return static_cast<OrderedNode<T>*>(this->_root);
-    }
-};
+template<class T>
+using SortedTree = Tree<T, SortedNode>;
 
 #endif // ATREE_H_INCLUDED

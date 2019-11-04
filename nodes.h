@@ -1,50 +1,59 @@
 #ifndef NODES_H_INCLUDED
 #define NODES_H_INCLUDED
 
-#include "containers.h"
+#include <set>
+#include <vector>
 
-template<class T>
-class BaseNode
+template<class T, template<typename...> class C>
+class Node
 {
 protected:
-    using NodePtr = BaseNode<T>*;
+    using NodePtr = Node<T, C>*;
 
-    T *_data;
-    NodePtr _parent;
-    BaseContainer<NodePtr> *_children;
-
-    virtual void __createChildrenContainer() = 0;
+    T                     *_data;
+    NodePtr                _parent;
+    C<Node<T, C>*>         _children;
 
 public:
-    BaseNode() : _data{nullptr}, _parent{nullptr}, _children{nullptr}
-    {
-        __createChildrenContainer();
-    }
+    Node() : _data{nullptr}, _parent{nullptr}
+    {}
 
-    BaseNode(T data) : BaseNode()
+    Node(T data) : Node()
     {
         _data = new T(data);
     }
 
-    BaseNode(T data, NodePtr parent) : BaseNode(data)
+    Node(T data, NodePtr parent) : Node(data)
     {
         _parent = parent;
-        parent->addChild(this);
+        _parent->addChild(this);
     }
 
-    ~BaseNode()
+    ~Node()
     {
-        for (auto it = _children->cbegin(); it != _children->cend(); it++)
+        for (auto it = _children.cbegin(); it != _children.cend(); it++)
             delete *it;
         delete _data;
     }
 
     void addChild(NodePtr child)
     {
-        _children.add(child);
+        child->setParent(this);
+        _children.insert(_children.end(), child);
     }
 
-    virtual void addChild(T childValue) = 0;
+    void addChild(T value)
+    {
+        auto tmpPtr = new Node<T, C>(value);
+        addChild(tmpPtr);
+    }
+
+    void setParent(NodePtr parent)
+    {
+        // TODO: remove parent if exist
+
+        _parent = parent;
+    }
 
     bool isRoot()
     {
@@ -53,51 +62,17 @@ public:
 
     size_t subtreeSize() const
     {
-        if (_children->empty())
-            return 1;
-
-        size_t sz = 1;  // including current
-        for (auto it = _children->cbegin(); it != _children->cend(); it++)
-            sz += (*it)->subtreeSize();
-        return sz;
-    }
-};
-
-
-template<class T>
-class OrderedNode : public BaseNode<T>
-{
-protected:
-    void __createChildrenContainer() override
-    {
-        this->_children = new std::vector<T>;
-    }
-
-public:
-    OrderedNode() : BaseNode<T>() {}
-    OrderedNode(T value) : BaseNode<T>(value) {}
-
-    void addChild(T childValue) override
-    {
-        auto tmpValue = new OrderedNode<T>(childValue);
-        BaseNode<T>::addChild(tmpValue);
+        size_t size = 1;
+        for (auto it = _children.cbegin(); it != _children.cend(); it++)
+            size += (*it)->subtreeSize();
+        return size;
     }
 };
 
 template<class T>
-class SortedNode : public BaseNode<T>
-{
-protected:
-    void __createChildrenContainer() override
-    {
-        this->_children = new std::multiset<T>;
-    }
-public:
-    void addChild(T childValue) override
-    {
-        auto tmpValue = new SortedNode<T>(childValue);
-        addChild(tmpValue);
-    }
-};
+using SortedNode = Node<T, std::set>;
+
+template<class T>
+using OrderedNode = Node<T, std::vector>;
 
 #endif // NODES_H_INCLUDED
